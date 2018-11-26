@@ -39,4 +39,5 @@ env:
   global:
     - GO111MODULE=on
 
-install: true
+install:
+  - go mod vendor
