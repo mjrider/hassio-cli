@@ -1,34 +1,39 @@
 language: go
 go_import_path: github.com/home-assistant/hassio-cli
-matrix:
+
+stages:
+  - lint
+  - test
+  - name: deploy
+    if: tag IS present AND branch = master AND repo = home-assistant/hassio-cli
+
+jobs:
   fast_finish: true
   include:
-  - go: '1.10'
-  - go: '1.11'
-  - go: '1.11'
-    env: LINTER
-    install: go get -u github.com/golang/lint/golint
-    script: golint -set_exit_status ./...
-  - go: '1.11'
-    env: DEPLOYMENT
-    addons:
-      apt:
-        packages:
-        - golang-go-linux-arm
-    before_deploy:
-    - CGO_ENABLED=0 GOARCH=386 go build -ldflags="-s -w" -o "hassio_i386"
-    - CGO_ENABLED=0 GOARCH=amd64 go build -ldflags="-s -w" -o "hassio_amd64"
-    - CGO_ENABLED=0 GOARM=6 GOARCH=arm go build -ldflags="-s -w" -o "hassio_armhf"
-    - CGO_ENABLED=0 GOARCH=arm64 go build -ldflags="-s -w" -o "hassio_aarch64"
-    deploy:
-      provider: releases
-      api_key:
-        secure: TT42Nu/6KLPbuiS1YtXQzcDKcGQ8LL/yt0Ci+2kI2X34NNt+9USGnlaOL6sznEzVTREwLstrz88KfUiVcAWlUOYdiWjrXKVRsIP7bjSlnBbmY789rmERDE9s9aptROUD8tXe3O4O5Rv/Wg5LYClGaoxNS9/bKhQFazaFayPZ4xT7h19EfYuQFszfYhcwuqBD7FOOJ5MYUIZWEdISj2wk32MR6hvUslGk0WYFRaWyIqpoE3wbBveT+v+HK+bgHfFnB0kKvz2PcQX3JklE2xOxTCBP4Ge1SdTLtEv6bzVPuxPLg+DwRHQckIS3BcXHFha72AUwTgaOl7L9IdKY/+JBVWxLnwZfqlRQpcJLnO27bV/SFeo5dezPhCR/Nk6SU7QHuevi9ewx9MRvvCxoR/HYSQr7FcxsYSjXi7kKYrGtMmSeEUowNJIaAKOxpXqe2evqhtsQz2E3DaC3+ZAdOnmqZaqUGUtB5+M+hL7dqV4VSqoHCXTvDK0/0IjBwaXVC5mH8tmNJR8r2gIUVO8+PUGI1EsbV6tXdaGycMNpWbvp5M0tRVS7ttRDeaet9D7c58dGLXyTszPn8XqpHG4lXvUT7sy5SYVAVO0CHoqlF3VdPpOvMffKWdSOBaUzpo+DDB7a75dJ4OeNJlLVueuZMQz3gt/1r3Slgp0etMC1iLqz2xA=
-      file_glob: true
-      file: hassio_*
-      skip_cleanup: true
-      on:
-        tags: true
-        repo: home-assistant/hassio-cli
-        branch: master
-  - go: master
+    - stage: lint
+      go: '1.11'
+      env: LINTER
+      install: go get -u github.com/golang/lint/golint
+      script: golint -set_exit_status ./...
+    - stage: test
+      go: '1.10'
+    - go: '1.11'
+    - go: master
+    - stage: deploy
+      go: '1.11'
+      addons:
+        apt:
+          packages:
+          - golang-go-linux-arm
+      before_deploy:
+        - CGO_ENABLED=0 GOARCH=386 go build -ldflags="-s -w" -o "hassio_i386"
+        - CGO_ENABLED=0 GOARCH=amd64 go build -ldflags="-s -w" -o "hassio_amd64"
+        - CGO_ENABLED=0 GOARM=6 GOARCH=arm go build -ldflags="-s -w" -o "hassio_armhf"
+        - CGO_ENABLED=0 GOARCH=arm64 go build -ldflags="-s -w" -o "hassio_aarch64"
+      deploy:
+        provider: releases
+        api_key:
+          secure: TT42Nu/6KLPbuiS1YtXQzcDKcGQ8LL/yt0Ci+2kI2X34NNt+9USGnlaOL6sznEzVTREwLstrz88KfUiVcAWlUOYdiWjrXKVRsIP7bjSlnBbmY789rmERDE9s9aptROUD8tXe3O4O5Rv/Wg5LYClGaoxNS9/bKhQFazaFayPZ4xT7h19EfYuQFszfYhcwuqBD7FOOJ5MYUIZWEdISj2wk32MR6hvUslGk0WYFRaWyIqpoE3wbBveT+v+HK+bgHfFnB0kKvz2PcQX3JklE2xOxTCBP4Ge1SdTLtEv6bzVPuxPLg+DwRHQckIS3BcXHFha72AUwTgaOl7L9IdKY/+JBVWxLnwZfqlRQpcJLnO27bV/SFeo5dezPhCR/Nk6SU7QHuevi9ewx9MRvvCxoR/HYSQr7FcxsYSjXi7kKYrGtMmSeEUowNJIaAKOxpXqe2evqhtsQz2E3DaC3+ZAdOnmqZaqUGUtB5+M+hL7dqV4VSqoHCXTvDK0/0IjBwaXVC5mH8tmNJR8r2gIUVO8+PUGI1EsbV6tXdaGycMNpWbvp5M0tRVS7ttRDeaet9D7c58dGLXyTszPn8XqpHG4lXvUT7sy5SYVAVO0CHoqlF3VdPpOvMffKWdSOBaUzpo+DDB7a75dJ4OeNJlLVueuZMQz3gt/1r3Slgp0etMC1iLqz2xA=
+        file_glob: true
+        file: hassio_*
+        skip_cleanup: true
